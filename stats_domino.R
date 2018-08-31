@@ -2,27 +2,41 @@ library(dplyr)
 library(xlsx)
 library(readxl)
 library(ggplot2)
+library(lubridate)
+library(purrr)
 #library(rvest)
 
 #url="https://anaaguas-my.sharepoint.com/:x:/r/personal/othon_oliveira_ana_gov_br/_layouts/15/WopiFrame.aspx?sourcedoc=%7B02D3AF50-502C-4B49-BD7A-AD4CF7F28BDD%7D&file=DominoApp.xlsm&action=default"
 #webpage <- read_html(url)
+url2="https://anaaguas-my.sharepoint.com/:x:/r/personal/othon_oliveira_ana_gov_br/_layouts/15/doc.aspx?sourcedoc=%7B02d3af50-502c-4b49-bd7a-ad4cf7f28bdd%7D&action=default&uid=%7B02D3AF50-502C-4B49-BD7A-AD4CF7F28BDD%7D&ListItemId=78382&ListId=%7B399E0921-B271-41D9-9590-055361E41198%7D&odsp=1&env=prod"
+testao=read.xlsx()
+endereco_planilha="https://anaaguas-my.sharepoint.com/personal/othon_oliveira_ana_gov_br/_layouts/15/onedrive.aspx?id=%2Fpersonal%2Fothon_oliveira_ana_gov_br%2FDocuments%2FJogo//Domino.xlsm"
+download.file(url2,"teste.xlsm")
 
+teste_endereco=read.xlsx(endereco_planilha,sheetIndex=1)
+read.xlsx(endereco_planilha,1)
+?download.file
+?read.xlsx
 jogos=NULL
 vitorias=NULL
 jogos_duplas=NULL
 
 vitorias_duplas=NULL
-
 jogos_domino=read.xlsx("C:\\Users\\theo.paula\\Documents\\2017\\SOE\\DominoApp.xlsm","Historico",encoding = "UTF-8")
-jogos_domino=read_xlsx("C:\\Users\\theoa\\OneDrive\\Data Science\\R\\DominoApp.xlsm","Historico")
+jogos_domino=read.xlsx("C:\\Users\\theo.paula\\Documents\\2017\\SOE\\DominoApp.xlsm","Historico",encoding = "UTF-8")
+
+jogos_domino=read_xlsx("C:\\Users\\theo.paula\\OneDrive\\Data Science\\R\\Domino.xlsm","Historico")
+jogos_domino=jogos_domino[-c(797:798),]
+
 jogos_domino$DataJogo=as.Date(jogos_domino$DataJogo)
 str(jogos_domino)
 jogos_domino$DataJogo=as.Date(jogos_domino$DataJogo, format="%d/%m/%Y")
 
+
 nt1j1=jogos_domino %>%
   group_by(Time1Jogador1) %>%
 summarise(jogos1=n())
-nt1j1
+
 nt1j2=jogos_domino %>%
   group_by(Time1Jogador2) %>%
   summarise(jogos2=n())
@@ -35,14 +49,11 @@ nt2j2=jogos_domino %>%
   group_by(Time2Jogador2) %>%
   summarise(jogos4=n())
 
-jogadores=c(levels(jogos_domino$Time1Jogador1),levels(jogos_domino$Time1Jogador2),
-            levels(jogos_domino$Time2Jogador1),levels(jogos_domino$Time2Jogador2))
-jogadores=unique(c(jogos_domino$Time1Jogador1,jogos_domino$Time1Jogador2,
-            jogos_domino$Time2Jogador1,jogos_domino$Time2Jogador2))
-jogadores=data.frame(ordered(jogadores))
-
+jogadores=c(jogos_domino$Time1Jogador1,jogos_domino$Time1Jogador2,jogos_domino$Time2Jogador1,jogos_domino$Time2Jogador2)
+jogadores=sort(unique(jogadores))
+jogadores=data.frame(Jogador=jogadores)
 names(jogadores)="Jogador"
-names(jogadores)
+
 
 jogadores=merge(jogadores,nt1j1, by=1, all=TRUE)
 jogadores=merge(jogadores,nt1j2, by=1, all=TRUE)
