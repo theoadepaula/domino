@@ -12,6 +12,7 @@ library(RColorBrewer)
 library(forcats)
 library(png)
 library(scales)
+library(formattable)
 
 options(pillar.round = FALSE)
 options(pillar.sigfigs = Inf)
@@ -61,6 +62,7 @@ tabela_mensal=desempenho_jogadores %>%
 tabela_mensal$Aprov=formatC(tabela_mensal$Aprov,2,format="f")
 
 tabela_mensal
+formattable(tabela_mensal)
 
 write.csv2(tabela_mensal,file=paste("csv/","ranking_mensal_",month(Sys.Date()),"_",year(Sys.Date()),".csv"))
 
@@ -96,12 +98,16 @@ adj1$AprovAc=formatC(adj1$AprovAc,2,format="f")
 adj1$pontuacao=formatC(adj1$pontuacao,2,format="f")
 adj1$Jogador=as.character(adj1$Jogador)
 
+adj1= adj1 %>% filter(weekdays(DataJogo)!="sábado" & weekdays(DataJogo)!="domingo")
+
+
+
 #gráfico da Pontuação diária
 
 adj1%>% filter(as.double(pontuacao)>0, day(DataJogo)>1 & day(DataJogo)<=day(Sys.Date()) )%>%
   ggplot(aes(x=DataJogo,y=as.double(pontuacao), group=Jogador,color=Jogador))+geom_line(aes(linetype=Jogador), size=1.2)+
   scale_y_continuous(breaks=seq(0,100,10))+ labs(y="Pontuação")+
-  scale_x_date(name="Dias", date_labels = "%d/%m/%Y", date_breaks = "2 days")+
+  scale_x_date(name="Dias", date_labels = "%d/%m/%Y", date_breaks = "2 day")+
   ggtitle(paste0("Histórico de Pontuação Diária - ",toupper(month(Sys.Date(), label=T, abbr=F)),"/",year(Sys.Date())))+ 
   scale_color_manual(values=lista_cores)+theme_dark()+
   theme(plot.title = element_text(hjust = 0.5), panel.background = element_rect(fill = "gray46") , 
