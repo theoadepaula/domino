@@ -29,7 +29,7 @@ jogos_domino=jogos_domino %>%
          Dia_semana= wday(DataJogo, label = T, abbr=F))
 
 jogadores_aposentados=c("Isaias Araujo","Marcelo","Matheus Rodrigues","Pablo","Joelio","Raoni")
-jogadores_principais=c("Luis Jesiel","Othon Fialho","Gilson Marçal","Gaetan Dubois","Rubens Wanderley","Sergio Glasherster","Th?o Albuquerque")
+jogadores_principais=c("Luis Jesiel","Othon Fialho","Gilson Marçal","Gaetan Dubois","Rubens Wanderley","Sergio Glasherster","Théo Albuquerque")
 lista_cores= c("aquamarine3","chocolate","lawngreen","cadetblue1","coral1","cornflowerblue",
                "blueviolet","darkgoldenrod1","brown2","burlywood3","darkmagenta",
                "darkolivegreen3","firebrick1","darkorchid3","gold1","darkslategray2","indianred","chartreuse1")
