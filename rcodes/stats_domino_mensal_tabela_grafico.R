@@ -1,3 +1,4 @@
+
 #carregar os pacotes abaixo para análise de dados
 library(dplyr)
 library(xlsx)
@@ -13,6 +14,9 @@ library(forcats)
 library(png)
 library(scales)
 library(formattable)
+
+# LTG ---------------------------------------------------------------------
+
 
 options(pillar.round = FALSE)
 options(pillar.sigfigs = Inf)
@@ -114,6 +118,9 @@ adj1%>% filter(as.double(pontuacao)>0, day(DataJogo)>1 & day(DataJogo)<=day(Sys.
         axis.text.x = element_text(angle=90))
 
 #gráfico de Aproveitamento diário
+
+# GA ----------------------------------------------------------------------
+
 
 adj1%>% filter(as.double(AprovAc)>0,day(DataJogo)>1 & day(DataJogo)<=day(Sys.Date()) )%>%
   ggplot(aes(x=DataJogo,y=as.double(AprovAc)/100, group=fct_inorder(Jogador),color= fct_inorder(Jogador)))+geom_line(aes(linetype=fct_inorder(Jogador)), size=1.2)+
