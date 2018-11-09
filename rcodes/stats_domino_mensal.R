@@ -43,7 +43,7 @@ jogos_domino=jogos_domino %>%
          MesAno=paste(Mes,Ano, sep="/"),
          Dia_semana= wday(DataJogo, label = T, abbr=F))
 
-jogadores_aposentados=c("Isaias Araujo","Marcelo","Matheus Rodrigues","Pablo","Joelio","Raoni")
+jogadores_aposentados=c("Isaias Araújo","Marcelo","Matheus Rodrigues","Pablo","Joelio","Raoni","Gesi")
 jogadores_principais=c("Luis Jesiel","Othon Fialho","Gilson Marçal","Gaetan Dubois","Rubens Wanderley","Sergio Glasherster","Th?o Albuquerque")
 lista_cores= c("aquamarine3","chocolate","lawngreen","cadetblue1","coral1","cornflowerblue",
                "blueviolet","darkgoldenrod1","brown2","burlywood3","darkmagenta",
@@ -253,7 +253,7 @@ jogos_duplas= jogos_domino_ordenado %>% unite(Dupla1,Time1Jogador1,Time1Jogador2
   mutate(Pontos=ifelse(Time_Dupla=="Dupla1",PontosTime1,PontosTime2),
          SaldoPts=ifelse(Time_Dupla=="Dupla1",SaldoPts,-(SaldoPts)),
          Resultado=ifelse(SaldoPts>0,"Vitória","Derrota"),
-         Buchuda=ifelse((PontosTime1>PontosTime2&PontosTime2==0)&SaldoPts>0,"Sim",ifelse((PontosTime1<PontosTime2&PontosTime1==0)&SaldoPts>0,"Sim","N?o")),
+         Buchuda=ifelse((PontosTime1>PontosTime2&PontosTime2==0)&SaldoPts>0,"Sim",ifelse((PontosTime1<PontosTime2&PontosTime1==0)&SaldoPts>0,"Sim","Não")),
          Placar=ifelse(PontosTime1>PontosTime2,paste0(PontosTime1,"x",PontosTime2),paste0(PontosTime2,"x",PontosTime1)))%>% 
         separate(Dupla, c("Parceiro1","Parceiro2"),sep="/", remove = F) %>%
         arrange(IdJogo,desc(SaldoPts),Dupla)
@@ -268,7 +268,7 @@ placares=desempenho_duplas %>% filter(Resultado=="Vitória" & Ano==2018) %>% gro
 
 #histograma dos placares at? agora  
 ggplot(placares,aes(x=Placar,y=Quantidade,fill=Placar))+geom_bar(stat="identity")+ geom_line(aes(x=Placar,y=Quantidade,group=1),color="red", size=1.2, linetype=3)+
-scale_y_continuous(breaks=seq(0,200,8))+ theme_wsj()+ggtitle("Histograma dos Resultados de 2018")+theme(legend.position = "none") #,plot.title = element_text(hjust = 0.5))
+scale_y_continuous(breaks=seq(0,800,25))+ theme_wsj()+ggtitle("Histograma dos Resultados de 2018")+theme(legend.position = "none") #,plot.title = element_text(hjust = 0.5))
 
 #para verificar qual é o melhor parceiro
 desempenho_duplas%>%  filter(Parceiro1=="Othon Fialho"|Parceiro2=="Othon Fialho") %>% group_by(Dupla) %>% 
@@ -276,17 +276,74 @@ desempenho_duplas%>%  filter(Parceiro1=="Othon Fialho"|Parceiro2=="Othon Fialho"
   filter(Jogos>10) %>% arrange(desc(Aprov),desc(Buchudas),desc(Saldo_Pt),desc(Vitórias))
 
 #para verificar qual é o melhor dupla do ano
-desempenho_duplas %>% 
-  filter(Ano==year(Sys.Date()) & Mes==month(Sys.Date())) %>% group_by(Dupla) %>% 
+desempenho_duplas %>%  filter(!str_detect(Dupla,"Gesi|Joélio|Pablo|Isaias Araújo|Matheus Rodrigues|Marcelo"),
+                              Ano==year(Sys.Date()) & semester(DataJogo)==2) %>% group_by(Dupla) %>% 
   summarize(Jogos=n(),Vitórias=sum(Resultado=="Vitória"),Saldo_Pt=as.integer(sum(SaldoPts)),Buchudas=sum(Buchuda=="Sim"),Aprov=round(mean(Resultado=="Vitória"),4)*100,pontuacao=ifelse(Jogos<20,0,ifelse(Jogos<40,(0.9+0.1*(Jogos-20)/20)*Aprov,Aprov))) %>%
-  filter(Jogos>4) %>% arrange(desc(Aprov),desc(Buchudas),desc(Saldo_Pt),desc(Vitórias))
+  arrange(desc(Aprov),desc(Buchudas),desc(Saldo_Pt),desc(Vitórias)) %>% filter(Jogos>5) %>% 
+  select(-pontuacao) %>% slice(1:20) %>% formattable()
+
+jogos_domino %>% filter(((Time1Jogador1=="Gilson Marçal"|Time1Jogador2=="Gilson Marçal") & PontosTime1<PontosTime2)|((Time2Jogador1=="Gilson Marçal"|Time2Jogador2=="Gilson Marçal") & PontosTime1>PontosTime2)) %>%
+  gather(times, Jogador,-c(IdJogo,DataJogo,Mes,Ano,MesAno,PontosTime1,PontosTime2,SaldoPts,Dia_semana)) %>%
+  arrange(IdJogo,SaldoPts,Jogador) %>% mutate(Pontos=ifelse(times=="Time1Jogador1"|times=="Time1Jogador2",PontosTime1,PontosTime2),
+                                              SaldoPts=ifelse(times=="Time1Jogador1"|times=="Time1Jogador2",SaldoPts,-(SaldoPts)),
+                                              Resultado=ifelse(SaldoPts>0,"Vitória","Derrota"),
+                                              Buchuda=ifelse((PontosTime1>PontosTime2&PontosTime2==0)&SaldoPts>0,"Sim",ifelse((PontosTime1<PontosTime2&PontosTime1==0)&SaldoPts>0,"Sim","Não")))%>% 
+  arrange(IdJogo,SaldoPts,Jogador) %>%
+  group_by(Jogador) %>% 
+  summarize(Jogos=n(),Vitórias=sum(Resultado=="Vitória"),Saldo_Pt=as.integer(sum(SaldoPts)),
+            Buchudas=sum(Buchuda=="Sim"),Aprov=mean(Resultado=="Vitória")*100) %>%
+  arrange(desc(Aprov),desc(Buchudas),desc(Saldo_Pt),desc(Vitórias)) %>% filter(!str_detect(Jogador,"Gilson Marçal|Gesi|Joélio|Pablo|Isaias Araújo|Matheus Rodrigues|Marcelo"),Jogos>5) %>% slice(1:10)
+
+algoz=function(vitima){
+  jogos_domino %>% filter(((Time1Jogador1==vitima|Time1Jogador2==vitima) & PontosTime1<PontosTime2)|
+                            ((Time2Jogador1==vitima|Time2Jogador2==vitima) & PontosTime1>PontosTime2)) %>%
+    gather(times, Jogador,-c(IdJogo,DataJogo,Mes,Ano,MesAno,PontosTime1,PontosTime2,SaldoPts,Dia_semana)) %>%
+    arrange(IdJogo,SaldoPts,Jogador) %>% mutate(Pontos=ifelse(times=="Time1Jogador1"|times=="Time1Jogador2",PontosTime1,PontosTime2),
+                                                SaldoPts=ifelse(times=="Time1Jogador1"|times=="Time1Jogador2",SaldoPts,-(SaldoPts)),
+                                                Resultado=ifelse(SaldoPts>0,"Vitória","Derrota"),
+                                                Buchuda=ifelse((PontosTime1>PontosTime2&PontosTime2==0)&SaldoPts>0,"Sim",ifelse((PontosTime1<PontosTime2&PontosTime1==0)&SaldoPts>0,"Sim","Não")))%>% 
+    arrange(IdJogo,SaldoPts,Jogador) %>% filter(!Jogador %in% jogadores_aposentados) %>%
+    group_by(Jogador) %>% 
+    summarize(Jogos=n(),Vitórias=sum(Resultado=="Vitória"),Saldo_Pt=as.integer(sum(SaldoPts)),
+              Buchudas=sum(Buchuda=="Sim"),Aprov=mean(Resultado=="Vitória")*100) %>%
+    arrange(desc(Aprov),desc(Buchudas),desc(Saldo_Pt),desc(Vitórias)) %>% filter(!str_detect(Jogador,vitima),Jogos>5) %>%
+    slice(1) %>% select(Jogador)
+}
+
+algoz("Deusdeir") 
+
+Jogadores= desempenho_jogadores %>% count(Jogador) %>% filter(n>30 & !Jogador %in% jogadores_aposentados) %>%
+  .[,1,drop=T]
+rm(Jogadores)
+algoz(Jogadores)
+length(Jogadores)
+
+vt=as.data.frame(c("Vítima"=NULL,"Algoz"=NULL))
+
+for(i in 1:length(Jogadores)){
+  vt[i,1]=Jogadores[i]
+  vt[i,2]=algoz(Jogadores[i])
+}
+
+colnames(vt)=c("Vítima","Algoz")
+
+formattable(vt)
+
+?formattable()
+
+#pegar o algoz
+tab_impar=desempenho_duplas %>% select(-Parceiro1,-Parceiro2,-Ano,-MesAno,-Mes) %>% filter(Resultado=="Vitória") 
+tab_par=desempenho_duplas %>% select(-Parceiro1,-Parceiro2,-Ano,-MesAno,-Mes) %>% filter(Resultado=="Derrota")
+
+tab_comp=tab_impar %>% left_join(tab_par,by=c("IdJogo","DataJogo"),suffix=c(".dupla1",".dupla2"))
+
 
 desempenho_duplas %>% 
   filter(Ano==year(Sys.Date())) %>% group_by(Dupla) %>% 
   summarize(Jogos=n(),Vitórias=sum(Resultado=="Vitória"),Saldo_Pt=as.integer(sum(SaldoPts)),Buchudas=sum(Buchuda=="Sim"),Aprov=round(mean(Resultado=="Vitória"),4)*100,pontuacao=ifelse(Jogos<20,0,ifelse(Jogos<40,(0.9+0.1*(Jogos-20)/20)*Aprov,Aprov))) %>%
   filter(Jogos>4) %>% arrange(desc(Aprov),desc(Buchudas),desc(Saldo_Pt),desc(Vitórias))
 
-
+quarter(Sys.Date())
 #para verificar qual é o melhor dupla do ano de jogadores ativos com mais de 10 jogos
 desempenho_duplas%>%  filter(!(Parceiro1 %in% jogadores_aposentados) & !(Parceiro2 %in% jogadores_aposentados)) %>% group_by(Dupla) %>% 
   summarize(Jogos=n(),Vitórias=sum(Resultado=="Vitória"),Saldo_Pt=sum(SaldoPts),Buchudas=sum(Buchuda=="Sim"),Aprov=round(mean(Resultado=="Vitória"),4)*100,pontuacao=ifelse(Jogos<20,0,ifelse(Jogos<40,(0.9+0.1*(Jogos-20)/20)*Aprov,Aprov))) %>%
