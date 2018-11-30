@@ -65,6 +65,10 @@ tabela_mensal=desempenho_jogadores %>%
 
 tabela_mensal$Aprov=formatC(tabela_mensal$Aprov,2,format="f")
 
+tabela_mensal %>% formattable()
+
+
+
 tabela_mensal
 formattable(tabela_mensal)
 
