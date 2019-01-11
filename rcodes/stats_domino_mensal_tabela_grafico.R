@@ -91,6 +91,7 @@ dia_final=parse_date_time(paste0(days_in_month(month(Sys.Date())),"/",month(Sys.
 
 datas_mes=seq(dia_inicial,to=dia_final,by="day")
 
+crossing(dia=seq(dia_inicial,to=dia_final,by="day"),Jogador=nomes_mensal)
 
 djj=data.frame(DataJogo=as.Date(rep(datas_mes,each=length(nomes_mensal))),Jogador=rep(nomes_mensal,length(datas_mes)))
 djj$Jogador=as.factor(djj$Jogador)
