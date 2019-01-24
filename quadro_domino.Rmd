@@ -34,6 +34,7 @@ library(ggthemes)
 library(lubridate)
 library(knitr)
 library(kableExtra)
+library(plotly)
 
 theme_update(plot.title = element_text(hjust = 0.5))
 lista_cores= c("aquamarine3","chocolate","lawngreen","cadetblue1","coral1","cornflowerblue",
@@ -63,32 +64,105 @@ desempenho_jogadores= jogadores_wide[,-c(3,4,9)]
 rm(jogadores_wide)
 
 tab_mes=function(mes=month(Sys.Date()),ano=year(Sys.Date())){
-  tabela_mensal=desempenho_jogadores %>% 
+tabela_mensal=desempenho_jogadores %>% 
   filter(Ano==ano & Mes==mes) %>% group_by(Jogador) %>% 
-  summarize(Jogos=n(),Vitórias=sum(Resultado=="Vitória"),Saldo_Pt=as.integer(sum(SaldoPts)),
-            Buchudas=sum(Buchuda=="Sim"),Aprov=round(mean(Resultado=="Vitória")*100,2),
+  summarize(Jogos=n(),Vitorias=sum(Resultado=="Vitoria"),Saldo_Pt=as.integer(sum(SaldoPts)),
+            Buchudas=sum(Buchuda=="Sim"),Aprov=mean(Resultado=="Vitória")*100,
             pontuacao=ifelse(Jogos<20, formatC(0,2,format="f") ,ifelse(Jogos<40,formatC((0.9+0.1*(Jogos-20)/20)*Aprov,2,format="f"),formatC(Aprov,2,format="f")))) %>%
-  arrange(desc(pontuacao),desc(Aprov),desc(Buchudas),desc(Saldo_Pt),desc(Vitórias))
+  arrange(desc(pontuacao),desc(Aprov),desc(Buchudas),desc(Saldo_Pt),desc(Vitorias))
 
-#tabela_mensal$Aprov=formatC(tabela_mensal$Aprov,2,format="f")
+tabela_mensal$Aprov=formatC(tabela_mensal$Aprov,2,format="f")
 
-  tabela_mensal
+tabela_mensal
 }
-
-  knitr::kable(tab_mes(1,2018), caption = paste("Ranking do Mês -",month(Sys.Date(), label=T, abbr=F),"/",year(Sys.Date())),         col.names = c("Jogador","Nº de Jogos","Vitórias","Saldo de Pontos","Buchudas","Aproveitamento","Pontuação"),align=c("l",rep("c",6))) %>% kable_styling(bootstrap_options = c("striped", "hover")) %>%
+  knitr::kable(tab_mes(), caption = paste("Ranking do Mês -",month(Sys.Date(), label=T, abbr=F),"/",year(Sys.Date())),         col.names = c("Jogador","Nº de Jogos","Vitórias","Saldo de Pontos","Buchudas","Aproveitamento","Pontuação"),align=c("l",rep("c",6))) %>% kable_styling(bootstrap_options = c("striped", "hover")) %>%
     row_spec(1, bold = T, color = "yellow", background = "gold")%>%
     row_spec(2, bold = T, color = "gray", background = "silver")%>%
-    row_spec(3, bold = T, color = "purple", background = "green")
+    row_spec(3, bold = T, color = "#da9f65", background = "#e9c7a5") %>%
+    row_spec(which(tab_mes()[,7]<1)[1]-1, bold = T, color = "white", background = "red") %>%
+    row_spec(which(tab_mes()[,7]<1), bold = T, color = "purple", background = "green")
+
 ```
 
-### Gráfico do Mês
+### Gráfico do Mês {data-height=600}
+```{r grafico_mes,message=FALSE,warning=FALSE}
+ddj=desempenho_jogadores %>% 
+  filter(Ano==year(Sys.Date()) & Mes==month(Sys.Date())) %>% group_by(DataJogo,Jogador) %>% 
+  summarize(Jogos=as.integer(n()),Vitorias=as.integer(sum(Resultado=="Vitória"))) %>%
+  arrange(Jogador,DataJogo,desc(Vitorias)) %>% ungroup() %>% group_by(Jogador) %>% ungroup()%>%
+  mutate(Jogador=as.factor(Jogador),JogosAc=cumsum(Jogos),VitoriasAC=cumsum(Vitorias),AprovAc=VitoriasAC/JogosAc*100,
+         pontuacao=ifelse(JogosAc<20,0,ifelse(JogosAc<40,(0.9+0.1*(JogosAc-20)/20)*AprovAc,AprovAc)))
+
+ddj1=ddj%>%select(-c(JogosAc,VitoriasAC,pontuacao,AprovAc))
+
+nomes_mensal= ddj %>% distinct(Jogador) %>% unlist(use.names = F)
+
+dia_inicial=parse_date_time(paste0("1/",month(Sys.Date()),"/",year(Sys.Date())),order="dmy")
+dia_final=parse_date_time(paste0(days_in_month(month(Sys.Date())),"/",month(Sys.Date()),"/",year(Sys.Date())),order="dmy")
+
+datas_mes=seq(dia_inicial,to=dia_final,by="day")
+
+#crossing(dia=seq(dia_inicial,to=dia_final,by="day"),Jogador=nomes_mensal)
+
+djj=data.frame(DataJogo=as.Date(rep(datas_mes,each=length(nomes_mensal))),Jogador=rep(nomes_mensal,length(datas_mes)))
+djj$Jogador=as.factor(djj$Jogador)
+adj=djj%>%left_join(ddj1)
+adj[is.na(adj)]=0
+adj1=adj %>% group_by(Jogador) %>% mutate(Jogos=as.integer(Jogos),
+                                          Vitorias=as.integer(Vitorias),
+                                          JogosAc=as.integer(cumsum(Jogos)),
+                                          VitoriasAC=as.integer(cumsum(Vitorias)),
+                                          AprovAc=ifelse(JogosAc==0,0,VitoriasAC/JogosAc*100),
+                                          pontuacao=ifelse(JogosAc<20,0,ifelse(JogosAc<40,(0.9+0.1*(JogosAc-20)/20)*AprovAc,AprovAc)))
+adj1$AprovAc=formatC(adj1$AprovAc,2,format="f")
+adj1$pontuacao=formatC(adj1$pontuacao,2,format="f")
+adj1$Jogador=as.character(adj1$Jogador)
+
+adj1= adj1 %>% filter(weekdays(DataJogo)!="sábado" & weekdays(DataJogo)!="domingo")
+
+p=adj1%>% filter(as.double(pontuacao)>0, day(DataJogo)>1 & day(DataJogo)<=day(Sys.Date()) )%>% ungroup()%>%
+  ggplot(aes(x=DataJogo,y=as.double(pontuacao), group=Jogador,color=Jogador))+geom_line(aes(linetype=Jogador), size=1.2)+
+  scale_y_continuous(breaks=seq(0,100,10))+ labs(y="Pontuação")+
+  scale_x_date(name="Dias", date_labels = "%d/%m/%Y", date_breaks = "2 day")+
+  ggtitle(paste0("Histórico de Pontuação Diária - ",toupper(month(Sys.Date(), label=T, abbr=F)),"/",year(Sys.Date())))+ 
+  scale_color_manual(values=lista_cores)+theme_dark()+
+  theme(plot.title = element_text(hjust = 0.5), panel.background = element_rect(fill = "gray46") , 
+        axis.text.x = element_text(angle=90))
+
+ggplotly(p)
+```
+
 
 Dados Gerais
 ===================================== 
-Column {data-width=650}
------------------------------------------------------------------------
 
-### Chart A
+### Tabela Geral
+
+```{r}
+tab_geral=function(mes_inicio=month(desempenho_jogadores$DataJogo[1]),ano_inicio=year(desempenho_jogadores$DataJogo[1]),mes_final=month(Sys.Date()),ano_final=year(Sys.Date())){
+tabela_geral=desempenho_jogadores %>% 
+  filter(DataJogo>=parse_date_time(paste0(c(ano_inicio,mes_inicio,1),collapse = "/"),order="ymd"),DataJogo<=parse_date_time(paste0(c(ano_final,mes_final,days_in_month(mes_final)),collapse = "/"),order="ymd")) %>% group_by(Jogador) %>% 
+  summarize(Jogos=n(),Vitorias=sum(Resultado=="Vitória"),Saldo_Pt=as.integer(sum(SaldoPts)),
+            Buchudas=sum(Buchuda=="Sim"),Aprov=mean(Resultado=="Vitória")*100,
+            pontuacao=ifelse(Jogos<20, formatC(0,2,format="f") ,ifelse(Jogos<40,formatC((0.9+0.1*(Jogos-20)/20)*Aprov,2,format="f"),formatC(Aprov,2,format="f")))) %>%
+  arrange(desc(pontuacao),desc(Aprov),desc(Buchudas),desc(Saldo_Pt),desc(Vitorias))
+
+tabela_geral$Aprov=round(tabela_geral$Aprov,2)
+
+ tabela_geral
+
+}
+
+knitr::kable(tab_geral(), caption = "Ranking do Período",col.names = c("Jogador","Nº de Jogos","Vitórias","Saldo de Pontos","Buchudas","Aproveitamento","Pontuação"),align=c("l",rep("c",6))) %>% 
+    kable_styling(bootstrap_options = c("striped", "hover")) %>%
+     row_spec(1, bold = T, color = "yellow", background = "gold")%>%
+     row_spec(2, bold = T, color = "gray", background = "silver")%>%
+     row_spec(3, bold = T, color = "#da9f65", background = "#e9c7a5") #%>%
+
+
+```
+
+### Gráfico geral {data-height=600}
 
 ```{r}
 
