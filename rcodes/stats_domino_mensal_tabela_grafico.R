@@ -56,8 +56,9 @@ rm(jogadores_wide)
 #Puxar a tabela atualizada dos jogadores
 
 #tabela mensal dos jogadores
+tab_mes=function(mes=month(Sys.Date()),ano=year(Sys.Date())){
 tabela_mensal=desempenho_jogadores %>% 
-  filter(Ano==year(Sys.Date()) & Mes==month(Sys.Date())) %>% group_by(Jogador) %>% 
+  filter(Ano==ano & Mes==mes) %>% group_by(Jogador) %>% 
   summarize(Jogos=n(),Vitórias=sum(Resultado=="Vitória"),Saldo_Pt=as.integer(sum(SaldoPts)),
             Buchudas=sum(Buchuda=="Sim"),Aprov=mean(Resultado=="Vitória")*100,
             pontuacao=ifelse(Jogos<20, formatC(0,2,format="f") ,ifelse(Jogos<40,formatC((0.9+0.1*(Jogos-20)/20)*Aprov,2,format="f"),formatC(Aprov,2,format="f")))) %>%
@@ -65,14 +66,12 @@ tabela_mensal=desempenho_jogadores %>%
 
 tabela_mensal$Aprov=formatC(tabela_mensal$Aprov,2,format="f")
 
-tabela_mensal %>% formattable()
-
-
-
 tabela_mensal
-formattable(tabela_mensal)
+}
+tab_mes() %>% formattable()
 
-write.csv2(tabela_mensal,file=paste("csv/","ranking_mensal_",month(Sys.Date()),"_",year(Sys.Date()),".csv"))
+
+write.csv2(tab_mes(),file=paste("csv/","ranking_mensal_",month(Sys.Date()),"_",year(Sys.Date()),".csv"))
 
 #calculo para gerar gráfico diário de aproveitamento
 ddj=desempenho_jogadores %>% 
