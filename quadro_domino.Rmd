@@ -1,0 +1,112 @@
+---
+title: "Dominó"
+output: 
+  flexdashboard::flex_dashboard
+
+---
+Sidebar {.sidebar}
+=====================================
+- [Dados do Mês](#dados-do-mes)
+- [Dados Gerais](#dados-gerais)
+- [Dados Individuais](#dados-individuais)
+
+Apresentação
+===================================== 
+Essa é a página inicial das informações a respeito dos jogos de dominó.
+
+Para acessar as informações, clique nos links abaixo:
+
+- [Dados do Mês](#dados-do-mes)
+- [Dados Gerais](#dados-gerais)
+- [Dados Individuais](#dados-individuais)
+
+Dados do Mês
+===================================== 
+
+### Tabela do Mês
+```{r pacotes, message=FALSE,warning=FALSE}
+library(tidyverse)
+library(xlsx)
+library(readxl)
+library(RColorBrewer)
+library(grid)
+library(ggthemes)
+library(lubridate)
+library(knitr)
+library(kableExtra)
+
+theme_update(plot.title = element_text(hjust = 0.5))
+lista_cores= c("aquamarine3","chocolate","lawngreen","cadetblue1","coral1","cornflowerblue",
+               "blueviolet","darkgoldenrod1","brown2","burlywood3","darkmagenta",
+               "darkolivegreen3","firebrick1","darkorchid3","gold1","darkslategray2","indianred","chartreuse1")
+```
+
+```{r dados, message=FALSE,warning=FALSE}
+jogos_domino=read_xlsx("src/Domino.xlsm","Historico")
+jogos_domino=jogos_domino %>% 
+  mutate(DataJogo=as.Date(DataJogo),
+         Mes=as.integer(month(DataJogo)),
+         Ano=as.integer(year(DataJogo)),
+         MesAno=paste(Mes,Ano, sep="/"),
+         Dia_semana= wday(DataJogo, label = T, abbr=F))
+
+jogadores_wide= jogos_domino%>% gather(times, Jogador,-c(IdJogo,DataJogo,Mes,Ano,MesAno,PontosTime1,
+                                                         PontosTime2,SaldoPts,Dia_semana)) %>% arrange(IdJogo,SaldoPts,Jogador)
+
+jogadores_wide=jogadores_wide %>% mutate(Pontos=ifelse(times=="Time1Jogador1"|times=="Time1Jogador2",PontosTime1,PontosTime2),
+                                         SaldoPts=ifelse(times=="Time1Jogador1"|times=="Time1Jogador2",SaldoPts,-(SaldoPts)),
+                                         Resultado=ifelse(SaldoPts>0,"Vitória","Derrota"),
+                                         Buchuda=ifelse((PontosTime1>PontosTime2&PontosTime2==0)&SaldoPts>0,"Sim",ifelse((PontosTime1<PontosTime2&PontosTime1==0)&SaldoPts>0,"Sim","Não")))%>% 
+  arrange(IdJogo,SaldoPts,Jogador)
+
+desempenho_jogadores= jogadores_wide[,-c(3,4,9)]
+rm(jogadores_wide)
+
+tab_mes=function(mes=month(Sys.Date()),ano=year(Sys.Date())){
+  tabela_mensal=desempenho_jogadores %>% 
+  filter(Ano==ano & Mes==mes) %>% group_by(Jogador) %>% 
+  summarize(Jogos=n(),Vitórias=sum(Resultado=="Vitória"),Saldo_Pt=as.integer(sum(SaldoPts)),
+            Buchudas=sum(Buchuda=="Sim"),Aprov=round(mean(Resultado=="Vitória")*100,2),
+            pontuacao=ifelse(Jogos<20, formatC(0,2,format="f") ,ifelse(Jogos<40,formatC((0.9+0.1*(Jogos-20)/20)*Aprov,2,format="f"),formatC(Aprov,2,format="f")))) %>%
+  arrange(desc(pontuacao),desc(Aprov),desc(Buchudas),desc(Saldo_Pt),desc(Vitórias))
+
+#tabela_mensal$Aprov=formatC(tabela_mensal$Aprov,2,format="f")
+
+  tabela_mensal
+}
+
+  knitr::kable(tab_mes(1,2018), caption = paste("Ranking do Mês -",month(Sys.Date(), label=T, abbr=F),"/",year(Sys.Date())),         col.names = c("Jogador","Nº de Jogos","Vitórias","Saldo de Pontos","Buchudas","Aproveitamento","Pontuação"),align=c("l",rep("c",6))) %>% kable_styling(bootstrap_options = c("striped", "hover")) %>%
+    row_spec(1, bold = T, color = "yellow", background = "gold")%>%
+    row_spec(2, bold = T, color = "gray", background = "silver")%>%
+    row_spec(3, bold = T, color = "purple", background = "green")
+```
+
+### Gráfico do Mês
+
+Dados Gerais
+===================================== 
+Column {data-width=650}
+-----------------------------------------------------------------------
+
+### Chart A
+
+```{r}
+
+```
+Dados Individuais
+===================================== 
+Column {data-width=350}
+-----------------------------------------------------------------------
+
+### Chart B
+
+```{r}
+
+```
+
+### Chart C
+
+```{r}
+
+```
+
