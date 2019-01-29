@@ -70,8 +70,14 @@ tabela_mensal
 }
 tab_mes() %>% formattable()
 
-
 write.csv2(tab_mes(),file=paste("csv/","ranking_mensal_",month(Sys.Date()),"_",year(Sys.Date()),".csv"))
+
+knitr::kable(tab_mes(), caption = paste("Ranking do Mês -",month(Sys.Date(), label=T, abbr=F),"/",year(Sys.Date())),         col.names = c("Jogador","Nº de Jogos","Vitórias","Saldo de Pontos","Buchudas","Aproveitamento","Pontuação"),align=c("l",rep("c",6))) %>% kable_styling(bootstrap_options = c("striped", "hover")) %>%
+  row_spec(1, bold = T, color = "yellow", background = "gold")%>%
+  row_spec(2, bold = T, color = "gray", background = "silver")%>%
+  row_spec(3, bold = T, color = "#da9f65", background = "#e9c7a5") %>%
+  row_spec(which(tab_mes()[,7]<1)[1]-1, bold = T, color = "white", background = "red") %>%
+  row_spec(which(tab_mes()[,7]<1), bold = T, color = "purple", background = "green")
 
 #calculo para gerar gráfico diário de aproveitamento
 ddj=desempenho_jogadores %>% 
@@ -134,3 +140,5 @@ adj1%>% filter(as.double(AprovAc)>0,day(DataJogo)>1 & day(DataJogo)<=day(Sys.Dat
   scale_color_manual(values=lista_cores)+theme_dark()+
   theme(plot.title = element_text(hjust = 0.5), panel.background = element_rect(fill = "gray46") , 
         axis.text.x = element_text(angle=90))
+
+
