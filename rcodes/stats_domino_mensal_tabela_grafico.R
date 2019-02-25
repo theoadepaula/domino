@@ -14,6 +14,7 @@ library(forcats)
 library(png)
 library(scales)
 library(formattable)
+library(kableExtra)
 
 # LTG ---------------------------------------------------------------------
 
@@ -68,11 +69,13 @@ tabela_mensal$Aprov=formatC(tabela_mensal$Aprov,2,format="f")
 
 tabela_mensal
 }
-tab_mes() %>% formattable()
+#tab_mes() %>% formattable()
 
-write.csv2(tab_mes(),file=paste("csv/","ranking_mensal_",month(Sys.Date()),"_",year(Sys.Date()),".csv"))
+write.csv2(tab_mes()%>%select(-c(mes,ano)),file=paste("csv/","ranking_mensal_",month(Sys.Date()),"_",year(Sys.Date()),".csv"))
 
-knitr::kable(tab_mes(), caption = paste("Ranking do Mês -",month(Sys.Date(), label=T, abbr=F),"/",year(Sys.Date())),         col.names = c("Jogador","Nº de Jogos","Vitórias","Saldo de Pontos","Buchudas","Aproveitamento","Pontuação"),align=c("l",rep("c",6))) %>% kable_styling(bootstrap_options = c("striped", "hover")) %>%
+knitr::kable(tab_mes()%>%select(-c(mes,ano)), caption = paste("Ranking do Mês -",month(Sys.Date(), label=T, abbr=F),"/",year(Sys.Date())),
+                                col.names = c("Jogador","Nº de Jogos","Vitórias","Saldo de Pontos","Buchudas","Aproveitamento","Pontuação"),
+                                align=c("l",rep("c",6))) %>% kable_styling(bootstrap_options = c("striped", "hover")) %>%
   row_spec(1, bold = T, color = "yellow", background = "gold")%>%
   row_spec(2, bold = T, color = "gray", background = "silver")%>%
   row_spec(3, bold = T, color = "#da9f65", background = "#e9c7a5") %>%
@@ -114,7 +117,7 @@ adj1$Jogador=as.character(adj1$Jogador)
 
 adj1= adj1 %>% filter(weekdays(DataJogo)!="sábado" & weekdays(DataJogo)!="domingo")
 
-
+#adj1 %>% filter(Jogador=="Sérgio Glasherster", DataJogo<=as.Date("2019-02-07")) %>% formattable()
 
 #gráfico da Pontuação diária
 
