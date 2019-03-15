@@ -1,20 +1,7 @@
 
 #carregar os pacotes abaixo para análise de dados
-library(dplyr)
-library(xlsx)
-library(readxl)
-library(ggplot2)
-library(grid)
-library(ggthemes)
-library(lubridate)
-library(tidyr)
-library(tidyverse)
-library(RColorBrewer)
-library(forcats)
-library(png)
-library(scales)
-library(formattable)
-library(kableExtra)
+pacman:: p_load("xlsx","tidyverse","readxl","grid","lubridate","ggthemes","RColorBrewer",
+                "png","scales","formattable","kableExtra")
 
 # LTG ---------------------------------------------------------------------
 
