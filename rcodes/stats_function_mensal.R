@@ -108,9 +108,9 @@ graf_mes=function(mes=month(Sys.Date()),ano=year(Sys.Date())){
                  "darkolivegreen3","firebrick1","darkorchid3","gold1","darkslategray2","indianred","chartreuse1")
   
    adj1%>%filter(as.double(pontuacao)>0, day(DataJogo)>1 & day(DataJogo)<=day(Sys.Date()) )%>%
-     ggplot(aes(x=DataJogo,y=as.double(pontuacao), group=Jogador,color=Jogador))+
+     ggplot(aes(x=DataJogo,y=as.double(pontuacao)/100, group=Jogador,color=Jogador))+
     geom_line(aes(linetype=Jogador), size=1.2)+
-    scale_y_continuous(breaks=seq(0,100,10))+ labs(y="Pontuação")+
+    scale_y_continuous(breaks=seq(0,1,0.05), labels=scales::percent)+ labs(y="Pontuação")+
     scale_x_date(name="Dias", date_labels = "%d/%m/%Y", date_breaks = "2 day")+
     ggtitle(paste0("Histórico de Pontuação Diária - ",toupper(month(mes, label=T, abbr=F)),"/",ano))+
     scale_color_manual(values=lista_cores)+theme_dark()+
