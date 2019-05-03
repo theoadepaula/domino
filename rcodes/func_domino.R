@@ -125,11 +125,59 @@ knitr::kable(tab_mes()%>%select(-c(Mes,Ano)), caption = paste("Ranking do Mês -
   row_spec(1, bold = T, color = "yellow", background = "gold")%>%
   row_spec(2, bold = T, color = "gray", background = "silver")%>%
   row_spec(3, bold = T, color = "#da9f65", background = "#e9c7a5") %>%
-  row_spec(which(tab_mes()[,7]<1)[1]-1, bold = T, color = "white", background = "red") %>%
+  #row_spec(which(tab_mes()[,7]<1)[1]-1, bold = T, color = "white", background = "red") %>%
   row_spec(which(tab_mes()[,7]<1), bold = T, color = "purple", background = "green")
 
 write.csv2(tab_mes()%>%select(-c(Mes,Ano)),file=paste("csv/","ranking_mensal_",month(Sys.Date()),"_",year(Sys.Date()),".csv"))
 
+knitr::kable(tab_mes()%>%select(-c(Mes,Ano)) %>% mutate(pontuacao=round(as.numeric(pontuacao))), caption = paste("Ranking do Mês -",month(Sys.Date(), label=T, abbr=F),"/",year(Sys.Date())),
+             col.names = c("Jogador","Nº de Jogos","Vitórias","Saldo de Pontos","Buchudas","Aproveitamento","Pontuação"),
+             align=c("l",rep("c",6))) %>% kable_styling(bootstrap_options = c("striped", "hover")) %>%
+  row_spec(1, bold = T, color = "yellow", background = "gold")%>%
+  row_spec(2, bold = T, color = "gray", background = "silver")%>%
+  row_spec(3, bold = T, color = "#da9f65", background = "#e9c7a5") %>%
+  row_spec(which(tab_mes()[,7]<1)[1]-1, bold = T, color = "white", background = "red") %>%
+  row_spec(which(tab_mes()[,7]<1), bold = T, color = "purple", background = "green")
+
 graf_mes()
 
 remove(list=ls())
+
+tab_mes() %>% select(pontuacao) %>% filter(pontuacao>1) %>% pull() %>% as.numeric() %>% boxplot(main="Boxplot da pontuação")
+
+tab_mes()%>% filter(pontuacao>1) %>% summarise(ic_menor=mean(as.numeric(pontuacao)),media=mean(as.numeric(pontuacao)))
+
+tab_mes() %>% filter(pontuacao>1) %>% ggplot(aes(x = "1",y=as.numeric(pontuacao)))+
+  theme_bw()+
+  theme(axis.text.y = element_blank())+ scale_y_continuous(breaks = seq(40,60,2))+
+  geom_boxplot()+labs(title = "Boxplot de Pontuação", y="Pontuação",x='')+coord_flip()
+
+jogos_domino %>% count(ano=year(DataJogo),teste=month(DataJogo)) %>% filter(ano>2017, teste<5) %>%
+  ggplot(aes(factor(teste),n,group=ano,fill=factor(teste)))+geom_col(position="dodge2")+guides(fill=FALSE)
+
+tab_mes() %>% summarise(mean(Jogos))
+
+
+
+map()
+
+meses_jogos=crossing(ano=c(2017:2019),mes=(1:12)) 
+meses_jogos= meses_jogos[-c(1:7,29:36),]
+
+jogos=map2(.x=meses_jogos$mes,.y=meses_jogos$ano,~tab_mes(.x,.y))
+
+map_df(jogos,~.x%>%summarise(Ano=mean(Ano),Mes=mean(Mes),media=mean(Jogos))) %>%
+  ggplot(aes(y=media,x=factor(Mes),group=factor(Ano),fill=factor(Ano)))+geom_col(position ="dodge2")+
+  scale_y_continuous(breaks = seq(0,120,15))+
+  labs(title="Média de Jogos por Mês",subtitle = "De agosto de 2017 a abril de 2019",
+       y="Número de Jogos",x="Meses")
+
+map_df(jogos,~.x%>%summarise(Ano=mean(Ano),Mes=mean(Mes),media=mean(Jogos))) %>% group_by(Ano) %>%
+  summarise(media=mean(media))
+
+meses_jogos %>% print(n=Inf)
+?guides
+jogos_domino %>% count(ano=year(DataJogo),teste=month(DataJogo)) %>% 
+  ggplot(aes(factor(teste),n,group=ano,color=factor(ano)))+geom_line()
+
+jogos_domino %>% count(ano=year(DataJogo),teste=month(DataJogo)) %>% print(n=Inf)
