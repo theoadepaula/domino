@@ -87,11 +87,10 @@ graf_mes=function(mes=month(Sys.Date()),ano=year(Sys.Date()),corte=80){
     ungroup() %>% group_by(Jogador) %>% ungroup()%>%
     mutate(Jogador=as.factor(Jogador),JogosAc=cumsum(Jogos),VitoriasAC=cumsum(Vitorias),
            AprovAc=VitoriasAC/JogosAc*100,
-           pontuacao=ifelse(JogosAc<20,0,
-                            ifelse(Jogos<corte,
-                                   (VitoriasAC+0.5*(80-JogosAc))/0.8,
-                                   #(0.9+0.1*((Jogos-ncorte)/ncorte))*AprovAc,
-                                    AprovAc)))
+           pontuacao=ifelse(Jogos<20, formatC(0,2,format="f") ,
+                            ifelse(Jogos<corte,formatC((Vitórias+0.5*(80-Jogos))/0.8, #(0.9+0.1*(Jogos-ncorte)/ncorte)*Aprov,
+                                                       2,format="f"),
+                                   formatC(Aprov,2,format="f"))))
   
   ddj1=ddj%>%select(-c(JogosAc,VitoriasAC,pontuacao,AprovAc))
   
@@ -110,16 +109,15 @@ graf_mes=function(mes=month(Sys.Date()),ano=year(Sys.Date()),corte=80){
                                             JogosAc=as.integer(cumsum(Jogos)),
                                             VitoriasAC=as.integer(cumsum(Vitorias)),
                                             AprovAc=ifelse(JogosAc==0,0,VitoriasAC/JogosAc),
-                                            pontuacao=ifelse(JogosAc<20,0,ifelse(JogosAc<corte,
-                                                                                 #(VitoriasAC+0.5*(80-JogosAc))/0.8,
-                                                                                 (0.9+0.1*(JogosAc-ncorte)/ncorte)*AprovAc,
-                                                                                 AprovAc)))
-  adj1$AprovAc=formatC(adj1$AprovAc,2,format="f")
-  adj1$pontuacao=formatC(adj1$pontuacao,2,format="f")
-
-  if(mes==month(Sys.Date()) & ano==year(Sys.Date())){
-    adj1%>% filter(as.double(pontuacao)>0, day(DataJogo)>1 & day(DataJogo)<=day(Sys.Date()))%>% #& day(DataJogo)<=day(Sys.Date()) 
-      ggplot(aes(x=DataJogo,y=as.double(pontuacao), group=Jogador,color=Jogador))+geom_line(aes(linetype=Jogador), size=1.2)+
+                                            pontuacao=ifelse(JogosAc<20, 0 ,
+                                                             ifelse(JogosAc<corte,(VitoriasAC+0.5*(80-JogosAc))/0.8, #(0.9+0.1*(Jogos-ncorte)/ncorte)*Aprov,
+                                                                    AprovAc)))
+  
+  adj1
+  
+    if(mes==month(Sys.Date()) & ano==year(Sys.Date())){
+    adj1%>% filter(as.double(pontuacao)>0, day(DataJogo)>1 & day(DataJogo)<=day(Sys.Date()))%>% #& day(DataJogo)<=day(Sys.Date())
+      ggplot(aes(x=DataJogo,y=as.double(pontuacao)/100, group=Jogador,color=Jogador))+geom_line(aes(linetype=Jogador), size=1.2)+
       scale_y_continuous(breaks=seq(0,1,.05), labels = scales::percent)+ labs(y="Pontuação")+
       scale_x_date(name="Dias", date_labels = "%d/%m/%Y", date_breaks = "2 day")+
       ggtitle(paste0("Histórico de Pontuação Diária - ",toupper(month(mes, label=T, abbr=F)),"/",ano))+
@@ -127,14 +125,14 @@ graf_mes=function(mes=month(Sys.Date()),ano=year(Sys.Date()),corte=80){
       theme(plot.title = element_text(hjust = 0.5), panel.background = element_rect(fill = "gray46") ,
             axis.text.x = element_text(angle=90))
   }else{
-    adj1%>% filter(as.double(pontuacao)>0, day(DataJogo)>1 )%>% #& day(DataJogo)<=day(Sys.Date()) 
-      ggplot(aes(x=DataJogo,y=as.double(pontuacao), group=Jogador,color=Jogador))+geom_line(aes(linetype=Jogador), size=1.2)+
+    adj1%>% filter(as.double(pontuacao)>0, day(DataJogo)>1 )%>% #& day(DataJogo)<=day(Sys.Date())
+      ggplot(aes(x=DataJogo,y=as.double(pontuacao)/100, group=Jogador,color=Jogador))+geom_line(aes(linetype=Jogador), size=1.2)+
       scale_y_continuous(breaks=seq(0,1,.05), labels = scales::percent)+ labs(y="Pontuação")+
       scale_x_date(name="Dias", date_labels = "%d/%m/%Y", date_breaks = "2 day")+
       ggtitle(paste0("Histórico de Pontuação Diária - ",toupper(month(mes, label=T, abbr=F)),"/",ano))+
       scale_color_manual(values=lista_cores)+theme_dark()+
       theme(plot.title = element_text(hjust = 0.5), panel.background = element_rect(fill = "gray46") ,
-            axis.text.x = element_text(angle=90)) 
+            axis.text.x = element_text(angle=90))
   }
 
 
@@ -160,7 +158,7 @@ knitr::kable(tab_mes()%>%select(-c(Mes,Ano)) %>% mutate(pontuacao=round(as.numer
   row_spec(which(tab_mes()[,7]<1)[1]-1, bold = T, color = "white", background = "red") %>%
   row_spec(which(tab_mes()[,7]<1), bold = T, color = "purple", background = "green")
 
-graf_mes()
+graf_mes() 
 
 remove(list=ls())
 
